@@ -1,8 +1,12 @@
-FROM golang:1.19.0
+FROM golang
 
-WORKDIR /usr/src/app
+RUN mkdir /app
 
-RUN go install github.com/cosmtrek/air@latest
+ADD . /app
 
-COPY . .
-RUN go mod tidy
+WORKDIR /app
+
+RUN go build -o main ./main.go
+
+EXPOSE 8080
+CMD [ "/app/main" ]

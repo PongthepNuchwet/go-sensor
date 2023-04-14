@@ -1,24 +1,52 @@
 version: '3.8'
+
 services:
-  web:
-    build: .
-    env_file:
-      - .env
-    ports:
-      - "8080:8080"
-    volumes:
-      - .:/usr/src/app
-    command: air ./cmd/main.go -b 0.0.0.0
-  db:
-    image: postgres:alpine
+  postgres:
+    container_name: postgres_container
+    image: postgres
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=fiber-demo
+      POSTGRES_USER: 'admin'
+      POSTGRES_PASSWORD: 'admin'
+    volumes:
+      - postgres:/data/postgres
     ports:
       - "5432:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: 'admin'
+      PGADMIN_DEFAULT_PASSWORD: 'admin'
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
-      - postgres-db:/var/lib/postgresql/data
+      - pgadmin:/var/lib/pgadmin
+
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  api:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      - PORT=8080
+      - DATABASE_URL=db
+    networks:
+      - postgres
+    depends_on:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge
 
 volumes:
-  postgres-db:
+  postgres:
+  pgadmin:
