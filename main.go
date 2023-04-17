@@ -4,37 +4,43 @@ import (
 	"log"
 	"os"
 
-	"github.com/PongthepNuchwet/go-sensor/book"
-	"github.com/PongthepNuchwet/go-sensor/storage"
+	"github.com/PongthepNuchwet/go-sensor/database"
+	"github.com/PongthepNuchwet/go-sensor/models/books"
+	"github.com/PongthepNuchwet/go-sensor/models/pump"
+	"github.com/PongthepNuchwet/go-sensor/models/waterFlow"
+	"github.com/PongthepNuchwet/go-sensor/models/waterPressure"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 )
 
-type Book struct {
-	Author    string `json:"author"`
-	Title     string `json:"title"`
-	Publisher string `json:"publisher"`
-}
-
-type Repository struct {
-	DB *gorm.DB
-}
-
-func (r *Repository) HelloWorld(c *fiber.Ctx) error {
+func HelloWorld(c *fiber.Ctx) error {
 	text := []byte("Hello, World!")
 	c.Send(text)
 	return nil
 }
-func (r *Repository) SetupRoutes(app *fiber.App) {
+func SetupRoutes(app *fiber.App) {
 
-	app.Get("/", r.HelloWorld)
+	app.Get("/", HelloWorld)
 
 	api := app.Group("/api")
-	api.Post("/create_books", book.CreateBook)
-	api.Delete("delete_book/:id", book.DeleteBook)
-	api.Get("/get_books/:id", book.GetBookByID)
-	api.Get("/books", book.GetBooks)
+	api.Post("/create_books", books.CreateBook)
+	api.Delete("/delete_book/:id", books.DeleteBook)
+	api.Get("/get_books/:id", books.GetBookByID)
+	api.Get("/books", books.GetBooks)
+
+	api.Post("/pumps", pump.CreatePump)
+	api.Get("/pumps", pump.GetPumps)
+	api.Get("/pumps/:date", pump.GetPumpsOntheday)
+
+	api.Post("/waterflow", waterFlow.CreateWaterFlow)
+	api.Get("/waterflow", waterFlow.GetWaterFlow)
+	api.Get("/waterflow/:date", waterFlow.GetWaterFlowOntheday)
+
+	api.Post("/waterPressure", waterPressure.CreateWaterPressure)
+	api.Get("/waterPressure", waterPressure.GetWaterPressure)
+	api.Get("/waterPressure/:date", waterPressure.GetWaterPressureOntheday)
+
 }
 
 func main() {
@@ -42,7 +48,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	config := &storage.Config{
+	config := &database.Config{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		Password: os.Getenv("DB_PASS"),
@@ -51,20 +57,36 @@ func main() {
 		DBName:   os.Getenv("DB_NAME"),
 	}
 
-	db, err := storage.NewConnection(config)
+	db, err := database.NewConnection(config)
 
 	if err != nil {
 		log.Fatal("could not load the database")
 	}
-	err = book.MigrateBooks(db)
+
+	err = books.MigrateBooks(db)
 	if err != nil {
 		log.Fatal("could not migrate db")
 	}
 
-	r := Repository{
-		DB: db,
+	err = pump.MigratePump(db)
+	if err != nil {
+		log.Fatal("could not migrate db")
 	}
+	err = waterFlow.MigratewaterFlow(db)
+	if err != nil {
+		log.Fatal("could not migrate db")
+	}
+
+	err = waterPressure.MigrateWaterPressure(db)
+	if err != nil {
+		log.Fatal("could not migrate db")
+	}
+
+	database.DBConn = db
+
 	app := fiber.New()
-	r.SetupRoutes(app)
+	app.Use(cors.New())
+
+	SetupRoutes(app)
 	app.Listen(":8080")
 }

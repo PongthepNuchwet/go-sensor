@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/gofiber/fiber/v2 v2.43.0
 	github.com/joho/godotenv v1.5.1
+	gorm.io/driver/postgres v1.5.0
 	gorm.io/gorm v1.25.0
 )
 
@@ -31,5 +32,4 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	gorm.io/driver/postgres v1.5.0 // indirect
 )

@@ -42,6 +42,8 @@ services:
       - postgres
     depends_on:
       - postgres
+    volumes:
+      - API:/app
 
 networks:
   postgres:
@@ -50,3 +52,4 @@ networks:
 volumes:
   postgres:
   pgadmin:
+  API:
